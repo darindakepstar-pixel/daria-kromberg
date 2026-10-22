@@ -1,0 +1,275 @@
+/* © 2026 Дария Кромберг */
+
+/* ===== Ваши контакты: поменяйте здесь, и они обновятся по всему сайту ===== */
+var CONFIG = {
+  telegram: 'your_telegram',          // ник в Telegram без @
+  email: 'your@email.ru',             // почта для заявок
+  vk: 'https://vk.com/your_page'      // ваша страница ВК
+};
+
+/* ===== Проекты: url — ссылка на живой сайт (оставьте '' если не нужно) ===== */
+var PROJECTS = [
+  {
+    key: 'moon', name: 'Баббл <em>Муун Тии</em>', title: 'Баббл Муун Тии',
+    short: 'Неоновый сайт баббл-ти кофейни с витриной напитков и полным меню',
+    tags: ['Сайт', 'Оформление ВК', 'Концепт'],
+    lead: 'Кофейня с неоновой вывеской и космосом на окнах. Перенесла этот вечерний неон в сайт: вывеска «зажигается» при открытии, напитки по очереди выплывают в витрине, а полное меню из 50+ позиций разложено по вкладкам. Отдельно — оформление группы ВК в том же стиле.',
+    points: [['Витрина при прокрутке', 'Экран «прилипает», а напитки сменяют друг друга с неоновым названием на фоне'], ['Полное меню', 'Все составы, объёмы и цены, удобные вкладки на телефоне'], ['ВК в одном стиле', 'Обложка, кнопки меню, карточки товаров, закреп']],
+    img: 'moon-d.webp', mob: 'moon-m.webp', vk: 'moon-vk.webp', url: ''
+  },
+  {
+    key: 'kashtan', name: '<em>Каштан</em>', title: 'Каштан',
+    short: 'Минималистичный сайт по мотивам их меню: витрина позиций, полное меню, атмосфера',
+    tags: ['Сайт', 'Оформление ВК', 'Концепт'],
+    lead: 'Новая кофейня с сильным минималистичным брендом. Логотип переведён в вектор, фирменные зелёные и горчичные квадраты из меню стали мотивом всего сайта. Статус «открыто / закрыто» считается по местному времени.',
+    points: [['Бренд сохранён', 'Шрифт, цвета и квадраты — из их собственного меню'], ['Витрина напитков', 'Позиции сменяются при прокрутке, фон меняет цвет под напиток'], ['Комплект для ВК', 'Обложка, аватар, кнопки меню, карточки товаров']],
+    img: 'kashtan-d.webp', mob: 'kashtan-m.webp', vk: 'kashtan-vk.webp', url: 'https://darindakepstar-pixel.github.io/kashtan_cafe/'
+  },
+  {
+    key: 'lavka', name: 'Лавка <em>Цветочницы</em>', title: 'Лавка Цветочницы',
+    short: 'Сайт-визитка цветочной лавки, которая живёт сарафанным радио, и новое оформление ВК',
+    tags: ['Сайт', 'Оформление ВК', 'Концепт'],
+    lead: 'У маленькой лавки не было сайта, а группа ВК была оформлена в разных стилях. Собрала тёплую «винтажную» визитку в цветах их логотипа: букеты, заказ в WhatsApp в один тап, адрес и карта.',
+    points: [['Заказ в один тап', 'Каждая кнопка открывает WhatsApp с готовым текстом про конкретный букет'], ['Без лишнего', 'Ни корзины, ни регистрации — только то, что нужно маленькой лавке'], ['ВК в цветах логотипа', 'Обложка, кнопки меню, закреп и фото товаров']],
+    img: 'lavka-d.webp', mob: 'lavka-m.webp', vk: 'lavka-vk.webp', url: ''
+  },
+  {
+    key: 'cvet', name: '<em>Цветочный</em>', title: 'Цветочный',
+    short: 'Редизайн интернет-магазина цветов: фирменный шрифт стал акцентом, а не шумом',
+    tags: ['Редизайн', 'Концепт'],
+    lead: 'У магазина рукописный шрифт стоял везде — в меню, кнопках и ценах. Оставила его как фишку только в заголовках, убрала градиенты и клипарт, вывела на главную хиты с ценами, подбор по бюджету и настоящие отзывы клиентов.',
+    points: [['Фирменный шрифт — акцентом', 'Только крупные заголовки, всё остальное — спокойный гротеск'], ['Продающая главная', 'Хит недели, категории, подбор по цене'], ['Живое движение', 'Плавное появление блоков и парящие карточки']],
+    img: 'cvet-d.webp', mob: 'cvet-m.webp', vk: '', url: ''
+  }
+];
+
+(function () {
+  var reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  requestAnimationFrame(function () { document.body.classList.add('is-loaded'); });
+
+  // Contacts
+  var tg = 'https://t.me/' + CONFIG.telegram;
+  document.getElementById('link-tg').href = tg;
+  document.getElementById('link-mail').href = 'mailto:' + CONFIG.email;
+  document.getElementById('link-vk').href = CONFIG.vk;
+
+  // Works list
+  var list = document.getElementById('works-list');
+  PROJECTS.forEach(function (p, i) {
+    var li = document.createElement('li');
+    li.className = 'work reveal';
+    li.innerHTML =
+      '<button class="work__btn" type="button" data-i="' + i + '" aria-haspopup="dialog">' +
+        '<span class="work__n">0' + (i + 1) + '</span>' +
+        '<span class="work__t">' + p.name + '</span>' +
+        '<span class="work__d">' + p.short + '<span class="work__tags">' + p.tags.map(function (t) { return '<span>' + t + '</span>'; }).join('') + '</span></span>' +
+        '<span class="work__thumb"><img src="' + p.img + '" alt="" loading="lazy"></span>' +
+        '<span class="work__arrow" aria-hidden="true">→</span>' +
+      '</button>';
+    list.appendChild(li);
+  });
+
+  // Hover preview follows the cursor
+  var prev = document.getElementById('hover-prev'), prevImg = prev.querySelector('img');
+  var mx = 0, my = 0, px = 0, py = 0, running = false;
+  function loop() {
+    px += (mx - px) * .14; py += (my - py) * .14;
+    prev.style.transform = 'translate(' + (px + 24) + 'px,' + (py - 120) + 'px) rotate(' + Math.max(-8, Math.min(8, (mx - px) * .05)) + 'deg)';
+    if (running) requestAnimationFrame(loop);
+  }
+  list.addEventListener('mousemove', function (e) { mx = e.clientX; my = e.clientY; });
+  list.querySelectorAll('.work__btn').forEach(function (b) {
+    b.addEventListener('mouseenter', function (e) {
+      prevImg.src = PROJECTS[+b.dataset.i].img; prev.classList.add('is-on');
+      if (!running) { px = mx = e.clientX; py = my = e.clientY; running = true; loop(); }
+    });
+    b.addEventListener('mouseleave', function () { prev.classList.remove('is-on'); running = false; });
+    b.addEventListener('click', function () { openCase(+b.dataset.i, b); });
+  });
+
+  // Case modal
+  var modal = document.getElementById('modal'), body = document.getElementById('modal-body'), lastBtn = null;
+  function openCase(i, btn) {
+    var p = PROJECTS[i]; lastBtn = btn;
+    body.innerHTML =
+      '<div class="case__head"><h3 id="m-title">' + p.title + '</h3><div class="work__tags">' + p.tags.map(function (t) { return '<span>' + t + '</span>'; }).join('') + '</div></div>' +
+      '<p class="case__lead">' + p.lead + '</p>' +
+      '<div class="case__grid"><img src="' + p.img + '" alt="Главный экран сайта ' + p.title + '"><img class="case__m" src="' + p.mob + '" alt="Мобильная версия ' + p.title + '">' +
+      (p.vk ? '<img class="case__vk" src="' + p.vk + '" alt="Оформление группы ВК ' + p.title + '">' : '') + '</div>' +
+      '<ul class="case__list">' + p.points.map(function (x) { return '<li><b>' + x[0] + '</b>' + x[1] + '</li>'; }).join('') + '</ul>' +
+      '<div class="case__go">' + (p.url ? '<a class="btn btn--ink" href="' + p.url + '" target="_blank" rel="noopener">Открыть сайт ↗</a>' : '') +
+      '<a class="btn btn--accent" href="#contact" data-close>Хочу так же</a></div>';
+    modal.hidden = false; document.body.style.overflow = 'hidden';
+    modal.querySelector('.modal__x').focus();
+  }
+  function closeCase() { modal.hidden = true; document.body.style.overflow = ''; if (lastBtn) lastBtn.focus(); }
+  modal.addEventListener('click', function (e) { if (e.target.closest('[data-close]')) closeCase(); });
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && !modal.hidden) closeCase(); });
+
+  // Reveal on scroll
+  var items = document.querySelectorAll('.reveal');
+  if (reduce || !('IntersectionObserver' in window)) items.forEach(function (el) { el.classList.add('is-visible'); });
+  else {
+    var io = new IntersectionObserver(function (es) {
+      es.forEach(function (e) { if (e.isIntersecting) { e.target.classList.add('is-visible'); io.unobserve(e.target); } });
+    }, { threshold: 0.12, rootMargin: '0px 0px -40px 0px' });
+    items.forEach(function (el) { io.observe(el); });
+  }
+
+  // ===== Scroll scene: haze title, surfacing words, header =====
+  var header = document.getElementById('header');
+  var hero = document.getElementById('top'), hazeT = document.getElementById('haze-title');
+  var smokes = document.querySelectorAll('.smoke'), eyeWrap = document.getElementById('eye');
+  var wordEls = [];
+  document.querySelectorAll('[data-words]').forEach(function (el) {
+    el.innerHTML = el.textContent.split(' ').map(function (w) { return '<span class="w">' + w + '</span>'; }).join(' ');
+    wordEls = wordEls.concat(Array.prototype.slice.call(el.querySelectorAll('.w')));
+  });
+  function scene() {
+    var y = window.scrollY, total = hero.offsetHeight - window.innerHeight;
+    var p = Math.max(0, Math.min(1, y / total));
+    var awake = document.body.classList.contains('is-awake');
+    // title surfaces from the haze but stays hazy
+    var tp = Math.min(1, p / .45);
+    hazeT.style.setProperty('--ta', awake ? (.05 + tp * .32).toFixed(3) : 0);
+    hazeT.style.setProperty('--tb', (14 - tp * 10).toFixed(1) + 'px');
+    hazeT.style.setProperty('--ls', (.5 - tp * .22).toFixed(3) + 'em');
+    smokes.forEach(function (s) { s.style.setProperty('--so', awake ? (.35 + tp * .5).toFixed(2) : 0); });
+    eyeWrap.style.setProperty('--eye-s', (1 - p * .12).toFixed(3));
+    // words appear one by one between 30% and 85% of the scene
+    var n = wordEls.length, shown = Math.round(Math.max(0, Math.min(1, (p - .3) / .55)) * n);
+    wordEls.forEach(function (w, i) { w.classList.toggle('is-in', i < shown); });
+    header.classList.toggle('is-shown', awake && (y > window.innerHeight * .35));
+  }
+  window.addEventListener('scroll', function () { requestAnimationFrame(scene); }, { passive: true });
+  window.addEventListener('resize', scene);
+  new MutationObserver(scene).observe(document.body, { attributes: true, attributeFilter: ['class'] });
+  scene();
+
+  // liquid-glass highlight follows the pointer
+  document.addEventListener('pointermove', function (e) {
+    var b = e.target.closest && e.target.closest('.btn'); if (!b) return;
+    var r = b.getBoundingClientRect();
+    b.style.setProperty('--gx', (e.clientX - r.left) + 'px'); b.style.setProperty('--gy', (e.clientY - r.top) + 'px');
+  });
+  // ===== Intro: code being typed, then the eye wakes up =====
+  var intro = document.getElementById('intro'), codeEl = document.getElementById('intro-code');
+  var LINES = [
+    ['c', '// открываю глаза…'],
+    ['', '<span class="k">const</span> artist = <span class="k">new</span> <span class="f">Vision</span>(<span class="s">\'Дария Кромберг\'</span>);'],
+    ['', 'artist.palette = [<span class="s">\'ночь\'</span>, <span class="s">\'опал\'</span>, <span class="s">\'неон\'</span>];'],
+    ['', '<span class="k">await</span> artist.<span class="f">paint</span>({ canvas: <span class="s">\'black\'</span> });'],
+    ['', 'artist.<span class="f">code</span>(design).<span class="f">render</span>();']
+  ];
+  function wake() {
+    if (document.body.classList.contains('is-awake')) return;
+    intro.classList.add('is-done');
+    document.body.classList.remove('is-intro');
+    setTimeout(function () { document.body.classList.add('is-awake'); }, reduce ? 0 : 350);
+  }
+  function plain(html) { var d = document.createElement('div'); d.innerHTML = html; return d.textContent; }
+  if (reduce) { intro.remove(); document.body.classList.add('is-awake'); }
+  else {
+    document.body.classList.add('is-intro');
+    var li = 0, ci = 0, done = '';
+    (function type() {
+      if (li >= LINES.length) { codeEl.innerHTML = done + '<span class="caret"></span>'; setTimeout(wake, 650); return; }
+      var cls = LINES[li][0], html = LINES[li][1], text = plain(html);
+      ci++;
+      // while typing show plain text; when a line finishes, swap in the highlighted version
+      var cur = ci >= text.length ? (cls ? '<span class="' + cls + '">' + html + '</span>' : html) : text.slice(0, ci).replace(/</g, '&lt;');
+      codeEl.innerHTML = done + cur + '<span class="caret"></span>';
+      if (ci >= text.length) { done += (cls ? '<span class="' + cls + '">' + html + '</span>' : html) + '\n'; li++; ci = 0; setTimeout(type, 160); }
+      else setTimeout(type, 16 + Math.random() * 22);
+    })();
+    document.getElementById('intro-skip').addEventListener('click', wake);
+    intro.addEventListener('click', wake);
+    document.addEventListener('keydown', function k(e) { if (e.key === 'Escape' || e.key === 'Enter' || e.key === ' ') { wake(); document.removeEventListener('keydown', k); } });
+  }
+
+  // ===== The eye: hover → it opens and reflects the projects =====
+  var wrap = document.getElementById('eye'), eye = document.getElementById('eye-btn');
+  var track = document.getElementById('eye-track'), label = document.getElementById('eye-label');
+  var pupil = eye.querySelector('.eye__pupil'), refl = eye.querySelector('.eye__reflect'), shine = eye.querySelector('.eye__shine');
+  PROJECTS.forEach(function (p, i) {
+    var im = document.createElement('img'); im.src = p.img; im.alt = ''; if (!i) im.className = 'is-on'; track.appendChild(im);
+  });
+  var shots = track.querySelectorAll('img'), cur = 0, timer = null, openedAt = 0;
+  function show(i) {
+    cur = (i + PROJECTS.length) % PROJECTS.length;
+    shots.forEach(function (s, k) { s.classList.toggle('is-on', k === cur); });
+    label.innerHTML = PROJECTS[cur].title + ' →';
+  }
+  function open() {
+    if (eye.classList.contains('is-open')) return;
+    openedAt = Date.now();
+    eye.classList.add('is-open'); wrap.classList.add('is-open'); document.getElementById('top').classList.add('is-open'); show(cur);
+    timer = setInterval(function () { show(cur + 1); }, 1700);
+  }
+  function close() { eye.classList.remove('is-open'); wrap.classList.remove('is-open'); document.getElementById('top').classList.remove('is-open'); clearInterval(timer); }
+  // mouse: open on hover; touch/pen: open on tap (see click), close when tapping elsewhere
+  eye.addEventListener('pointerenter', function (e) { if (e.pointerType === 'mouse') open(); });
+  eye.addEventListener('pointerleave', function (e) { if (e.pointerType === 'mouse') close(); });
+  document.addEventListener('pointerdown', function (e) { if (e.pointerType !== 'mouse' && !eye.contains(e.target) && e.target !== label) close(); });
+  eye.addEventListener('focus', open); eye.addEventListener('blur', function () { setTimeout(function () { if (!wrap.contains(document.activeElement)) close(); }, 0); });
+  eye.addEventListener('click', function () {
+    // on touch screens the first tap opens the eye, the next one opens the project
+    if (!eye.classList.contains('is-open')) { open(); return; }
+    if (Date.now() - openedAt < 600) return;
+    openCase(cur, eye);
+  });
+  label.addEventListener('click', function (e) { e.preventDefault(); openCase(cur, eye); });
+
+  // the eye "looks" toward the cursor + custom cursor ring
+  var ring = document.createElement('div'); ring.className = 'eye-cursor'; ring.textContent = 'смотреть'; document.body.appendChild(ring);
+  if (!reduce) {
+    document.addEventListener('mousemove', function (e) {
+      var r = eye.getBoundingClientRect();
+      var dx = (e.clientX - (r.left + r.width / 2)) / window.innerWidth, dy = (e.clientY - (r.top + r.height / 2)) / window.innerHeight;
+      var mx = Math.max(-1, Math.min(1, dx * 2)), my = Math.max(-1, Math.min(1, dy * 2));
+      pupil.style.transform = 'translate(' + (mx * 6) + 'px,' + (my * 4) + 'px)';
+      refl.style.transform = 'translate(' + (mx * 4) + 'px,' + (my * 3) + 'px)';
+      shine.style.transform = 'translate(' + (mx * -5) + 'px,' + (my * -4) + 'px)';
+      ring.style.transform = 'translate(' + e.clientX + 'px,' + e.clientY + 'px)';
+    });
+    eye.addEventListener('pointerenter', function (e) { if (e.pointerType === 'mouse') ring.classList.add('is-on'); });
+    eye.addEventListener('pointerleave', function () { ring.classList.remove('is-on'); });
+  }
+
+  // Form chips
+  document.querySelectorAll('.chips').forEach(function (g) {
+    g.addEventListener('click', function (e) {
+      var c = e.target.closest('.chip'); if (!c) return;
+      if (g.hasAttribute('data-single')) g.querySelectorAll('.chip').forEach(function (x) { if (x !== c) x.setAttribute('aria-pressed', 'false'); });
+      c.setAttribute('aria-pressed', c.getAttribute('aria-pressed') === 'true' ? 'false' : 'true');
+    });
+  });
+  document.querySelectorAll('[data-pick]').forEach(function (a) {
+    a.addEventListener('click', function () {
+      document.querySelectorAll('[data-group="type"] .chip').forEach(function (c) { c.setAttribute('aria-pressed', c.textContent === a.dataset.pick ? 'true' : 'false'); });
+    });
+  });
+
+  // Form → Telegram / e-mail (nothing is stored on the site)
+  var form = document.getElementById('order'), via = 'tg';
+  form.querySelectorAll('[data-via]').forEach(function (b) { b.addEventListener('click', function () { via = b.dataset.via; }); });
+  function picked(group) {
+    return Array.prototype.map.call(form.querySelectorAll('[data-group="' + group + '"] [aria-pressed="true"]'), function (c) { return c.textContent; }).join(', ');
+  }
+  form.addEventListener('submit', function (e) {
+    e.preventDefault();
+    var f = form.elements;
+    var text = 'Здравствуйте, Дария! Заявка с сайта.\n' +
+      (picked('type') ? 'Нужно: ' + picked('type') + '\n' : '') +
+      (picked('budget') ? 'Бюджет: ' + picked('budget') + '\n' : '') +
+      (f.name.value ? 'Имя: ' + f.name.value + '\n' : '') +
+      (f.biz.value ? 'Проект: ' + f.biz.value + '\n' : '') +
+      (f.msg.value ? '\n' + f.msg.value : '');
+    if (via === 'mail') {
+      location.href = 'mailto:' + CONFIG.email + '?subject=' + encodeURIComponent('Заявка с сайта' + (f.biz.value ? ': ' + f.biz.value : '')) + '&body=' + encodeURIComponent(text);
+      return;
+    }
+    var done = function () { document.getElementById('form-ok').hidden = false; window.open(tg, '_blank', 'noopener'); };
+    if (navigator.clipboard) navigator.clipboard.writeText(text).then(done, done); else done();
+  });
+})();
