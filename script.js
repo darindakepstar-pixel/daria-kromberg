@@ -387,13 +387,63 @@ var PROJECTS = [
     if (ci <= line.length) {
       out.innerHTML = done + hl(line.slice(0, ci));
       out.appendChild(caret);
-      var ch = line[ci - 1];
-      ci += 1 + (Math.random() < .3 ? 1 : 0);
-      setTimeout(type, ch === ' ' ? 28 : 34 + Math.random() * 50);
+      var ch = line[ci - 1], sprite = /^  '[.a-z]+',$/.test(line);
+      ci += sprite ? 4 : 1 + (Math.random() < .35 ? 1 : 0);
+      setTimeout(type, sprite ? 16 : ch === ' ' ? 18 : 22 + Math.random() * 34);
     } else {
       done += hl(line) + '\n'; li++; ci = 0;
-      if (li >= CODE.length) { setTimeout(function () { pre.classList.add('is-fading'); setTimeout(function () { done = ''; li = 0; out.innerHTML = ''; pre.classList.remove('is-fading'); type(); }, 1400); }, 2500); return; }
-      setTimeout(type, line === '' ? 160 : 260 + Math.random() * 380);
+      if (li >= CODE.length) {
+        caret.classList.add('is-run');
+        setTimeout(function () { runDragon(function () {
+          pre.classList.add('is-fading');
+          setTimeout(function () { done = ''; li = 0; out.innerHTML = ''; caret.classList.remove('is-run'); pre.classList.remove('is-fading'); type(); }, 1400);
+        }); }, 900);
+        return;
+      }
+      setTimeout(type, line === '' ? 120 : /^  '/.test(line) ? 40 : 180 + Math.random() * 260);
     }
   })();
+
+  // the result: a small pixel dragon rises from embers next to the code, then turns back to ash
+  var dc = document.createElement('canvas'); dc.className = 'ashdragon'; dc.setAttribute('aria-hidden', 'true');
+  pre.parentNode.insertBefore(dc, pre.nextSibling);
+  var dx = dc.getContext('2d'), PIX = [], S = 4;
+  var PAL = { b: '#7c6bff', a: '#463a82', c: '#b9f0e6', e: '#e7c27a', f: '#ffaa5a', y: '#ffe08a', h: '#dcd7f0', w: '#342c64', v: '#96c8e6' };
+  DRAGON.forEach(function (row, y) {
+    for (var x = 0; x < row.length; x++) if (row[x] !== '.') PIX.push({ x: x, y: y, ch: row[x], wing: row[x] === 'w' || row[x] === 'v',
+      ax: x + (Math.random() - .5) * 16, ay: 41 + Math.random() * 2, delay: (39 - y) / 39 * 1500 + Math.random() * 450, fx: (Math.random() - .5) * 6 });
+  });
+  function hex(c) { return [1, 3, 5].map(function (i) { return parseInt(c.slice(i, i + 2), 16); }); }
+  function mix(a, b, k) { a = hex(a); b = hex(b); return 'rgb(' + [0, 1, 2].map(function (i) { return Math.round(a[i] + (b[i] - a[i]) * k); }).join(',') + ')'; }
+  function clamp(k) { return k < 0 ? 0 : k > 1 ? 1 : k; }
+  function px(x, y, col, a, sz) { sz = sz || S; dx.globalAlpha = a; dx.fillStyle = col; dx.fillRect(Math.round(x * S + (S - sz) / 2), Math.round(y * S + (S - sz) / 2), sz, sz); }
+  function runDragon(after) {
+    var dpr = Math.min(2, window.devicePixelRatio || 1), cssS = window.innerWidth < 700 ? 3 : 5;
+    S = cssS * dpr; dc.width = 44 * S; dc.height = 44 * S; dc.style.width = 44 * cssS + 'px'; dc.style.height = 44 * cssS + 'px';
+    dc.classList.add('is-on');
+    var t0 = performance.now(), RISE = 2800, LIVE = 6000, FALL = 2400;
+    (function frame(now) {
+      var t = now - t0; dx.clearRect(0, 0, dc.width, dc.height);
+      if (t < RISE) PIX.forEach(function (p) {
+        var k = 1 - Math.pow(1 - clamp((t - p.delay) / 1100), 3);
+        if (k <= 0) { if (Math.random() < .3) px(p.ax, p.ay, '#ffaa5a', .5, S * .5); return; }
+        px(p.ax + (p.x - p.ax) * k + Math.sin(k * 6 + p.fx) * (1 - k) * 1.2, p.ay + (p.y - p.ay) * k,
+          k < 1 ? mix('#ffaa5a', PAL[p.ch], k * k) : PAL[p.ch], .35 + k * .65, k < 1 ? S * (.5 + k * .5) : S);
+      });
+      else if (t < RISE + LIVE) {
+        var lt = t - RISE, flap = 1 - .42 * Math.pow(Math.sin(lt / 210), 2);
+        PIX.forEach(function (p) {
+          if ((p.ch === 'f' || p.ch === 'y') && Math.random() < .25) return;
+          px(p.x, Math.round(p.wing ? 17 + (p.y - 17) * flap : p.y), PAL[p.ch], 1);
+        });
+      } else if (t < RISE + LIVE + FALL) {
+        var ft = t - RISE - LIVE;
+        PIX.forEach(function (p) {
+          var k = clamp((ft - p.y * 22 - Math.random() * 60) / 1400);
+          px(p.x + p.fx * k, p.y + k * k * (42 - p.y), mix(PAL[p.ch], '#3a3646', Math.min(1, k * 1.6)), 1 - k * .9);
+        });
+      } else { dx.clearRect(0, 0, dc.width, dc.height); dc.classList.remove('is-on'); after(); return; }
+      dx.globalAlpha = 1; requestAnimationFrame(frame);
+    })(t0);
+  }
 })();
