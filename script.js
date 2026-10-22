@@ -7,6 +7,13 @@ var CONFIG = {
   vk: 'https://vk.com/your_page'      // ваша страница ВК
 };
 
+/* ===== Картины: title — название (оставьте '' если без названия), glow — цвет свечения R,G,B ===== */
+var PAINTINGS = [
+  { img: 'art-bar.webp', w: 900, h: 1200, title: '', glow: '214,72,52' },
+  { img: 'art-eye-close.webp', w: 750, h: 440, title: '', glow: '124,107,255' },
+  { img: 'art-cat.webp', w: 640, h: 780, title: '', glow: '236,140,160' }
+];
+
 /* ===== Проекты: url — ссылка на живой сайт (оставьте '' если не нужно) ===== */
 var PROJECTS = [
   {
@@ -272,4 +279,235 @@ var PROJECTS = [
     var done = function () { document.getElementById('form-ok').hidden = false; window.open(tg, '_blank', 'noopener'); };
     if (navigator.clipboard) navigator.clipboard.writeText(text).then(done, done); else done();
   });
+})();
+
+/* ===== Живопись + плачущий портрет ===== */
+(function () {
+  var reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var roman = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII'];
+
+  // paintings
+  var box = document.getElementById('canvases');
+  var lb = document.getElementById('lightbox'), lbImg = document.getElementById('lb-img'), lbCap = document.getElementById('lb-cap');
+  PAINTINGS.forEach(function (p, i) {
+    var b = document.createElement('button');
+    b.type = 'button'; b.className = 'canvas'; b.style.setProperty('--glow', p.glow);
+    b.setAttribute('aria-label', 'Открыть картину ' + (p.title || roman[i]));
+    b.innerHTML = '<span class="canvas__frame"><img src="' + p.img + '" width="' + p.w + '" height="' + p.h + '" alt="' + (p.title || 'Картина Дарии Кромберг') + '" loading="lazy"></span>' +
+      '<span class="canvas__cap">' + roman[i] + (p.title ? ' <b>' + p.title + '</b>' : '') + '</span>';
+    b.addEventListener('pointermove', function (e) {
+      if (e.pointerType !== 'mouse') return;
+      var r = b.querySelector('.canvas__frame').getBoundingClientRect();
+      var x = (e.clientX - r.left) / r.width, y = (e.clientY - r.top) / r.height;
+      b.style.setProperty('--mx', (x * 100).toFixed(1) + '%'); b.style.setProperty('--my', (y * 100).toFixed(1) + '%');
+      if (!reduce) { b.style.setProperty('--ry', ((x - .5) * 8).toFixed(2) + 'deg'); b.style.setProperty('--rx', ((.5 - y) * 8).toFixed(2) + 'deg'); }
+    });
+    b.addEventListener('pointerleave', function () { b.style.setProperty('--rx', '0deg'); b.style.setProperty('--ry', '0deg'); });
+    b.addEventListener('click', function () {
+      lbImg.src = p.img; lbImg.alt = p.title || 'Картина Дарии Кромберг';
+      lbCap.textContent = roman[i] + (p.title ? ' · ' + p.title : '');
+      lb.hidden = false; document.body.style.overflow = 'hidden';
+      requestAnimationFrame(function () { lb.classList.add('is-open'); });
+    });
+    box.appendChild(b);
+  });
+  function closeLb() { lb.classList.remove('is-open'); document.body.style.overflow = ''; setTimeout(function () { lb.hidden = true; }, 450); }
+  lb.addEventListener('click', closeLb);
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && !lb.hidden) closeLb(); });
+
+  // ===== weeping portrait (alpha from the matte half of the video) =====
+  var weep = document.getElementById('weep'), stage = document.getElementById('weep-stage');
+  var v = document.getElementById('weep-v'), cv = document.getElementById('weep-cv'), mir = document.getElementById('weep-m');
+  var tears = document.getElementById('weep-tears');
+  if (!weep) return;
+  var cx = cv.getContext('2d'), off = document.createElement('canvas'), ox = off.getContext('2d', { willReadFrequently: true });
+  off.width = 520; off.height = 1200;
+  var img = cx.createImageData(520, 600), visible = false, lastT = -1, live = false;
+  v.playbackRate = .55; v.addEventListener('loadedmetadata', function () { v.playbackRate = .55; });
+  function compose() {
+    if (v.readyState < 2 || v.currentTime === lastT) return;
+    lastT = v.currentTime;
+    try {
+      ox.drawImage(v, 0, 0, 520, 1200);
+      var src = ox.getImageData(0, 0, 520, 1200).data, dst = img.data, n = 520 * 600 * 4;
+      for (var i = 0; i < n; i += 4) { dst[i] = src[i]; dst[i + 1] = src[i + 1]; dst[i + 2] = src[i + 2]; dst[i + 3] = src[n + i + 1]; }
+      cx.putImageData(img, 0, 0);
+      if (!live) { live = true; weep.classList.add('is-live'); }
+    } catch (e) { weep.classList.add('is-fallback'); compose = function () {}; }
+  }
+
+  // mirror: the portrait flipped into black water, rows shifted by a soft wave
+  var mx = mir.getContext('2d'), MW = 260, MH = 115, wave = 0, t0 = performance.now();
+  mir.width = MW; mir.height = MH;
+  function mirror(now) {
+    var t = (now - t0) / 1000, srcH = 600 * MH / (MW * 600 / 520);
+    mx.clearRect(0, 0, MW, MH);
+    for (var y = 0; y < MH; y++) {
+      var k = y / MH, off2 = Math.sin(y * .45 - t * 2.2) * (.6 + k * 1.8) + wave * Math.sin(y * .9 - t * 9) * (1 - k * .5) * 4;
+      mx.drawImage(cv, 0, Math.max(0, 600 - k * srcH - 1), 520, 1, off2, y, MW, 1.4);
+    }
+    wave *= .965;
+  }
+
+  var running = false;
+  function loop() {
+    if (running) return; running = true;
+    (function step(now) {
+      if (!visible) { running = false; return; }
+      compose(); if (live) mirror(now);
+      requestAnimationFrame(step);
+    })(performance.now());
+  }
+  if ('IntersectionObserver' in window) new IntersectionObserver(function (es) {
+    visible = es[0].isIntersecting;
+    if (visible) { if (!reduce) v.play().catch(function () {}); loop(); } else v.pause();
+  }, { rootMargin: '120px' }).observe(weep);
+  if (reduce) v.pause();
+
+  // tears: glint on the cheek, slide, fall into the water, ripple
+  function tear() {
+    if (!visible || reduce || document.hidden || !live) return;
+    var x = 61 + Math.random() * 4, y = 22.5 + Math.random() * 2, floor = 97;
+    var d = document.createElement('span'); d.className = 'tear';
+    d.style.left = x + '%'; d.style.top = y + '%'; tears.appendChild(d);
+    var hpx = tears.clientHeight, fall = (floor - y) / 100 * hpx;
+    d.animate([
+      { opacity: 0, transform: 'translateY(0) scale(.2)' },
+      { opacity: 1, transform: 'translateY(2px) scale(1)', offset: .18 },
+      { opacity: 1, transform: 'translateY(' + (hpx * .045) + 'px) scale(1)', offset: .55, easing: 'cubic-bezier(.55,0,1,.6)' },
+      { opacity: .9, transform: 'translateY(' + fall + 'px) scale(.8, 1.7)' }
+    ], { duration: 3200, easing: 'ease-in-out' }).onfinish = function () {
+      d.remove(); wave = 1;
+      [0, 260].forEach(function (delay, j) {
+        setTimeout(function () {
+          var r = document.createElement('span'); r.className = 'ripple';
+          r.style.left = x + '%'; r.style.top = floor + '%'; tears.appendChild(r);
+          r.animate([{ opacity: j ? .6 : .9, transform: 'scale(.1)' }, { opacity: 0, transform: 'scale(' + (j ? 1.2 : 1.6) + ')' }],
+            { duration: 1500, easing: 'cubic-bezier(.2,.7,.3,1)' }).onfinish = function () { r.remove(); };
+        }, delay);
+      });
+    };
+  }
+  (function next() { tear(); setTimeout(next, 3600 + Math.random() * 2600); })();
+
+  // ===== code in the haze: a pixel dragon rising from the ashes, typed line by line =====
+  var DRAGON = [
+    '.....................h...h..........f.y.....',
+    '.....................hb..hb........fyf.y....',
+    'v.....................bbbbb.......ffy.f.....',
+    'vv...................bbbebbbb....fyf........',
+    '.vv.................bbbbbbbbbbbff...........',
+    '.vwv................bbbbbaabbbf.........v...',
+    '..vwv...............bbbb...aa..........vv...',
+    '..vwwv...............bbbb.............vwv...',
+    '...vwwv...............bbb............vwwv...',
+    '...vwwwv..............bbbb..........vwwv....',
+    '....vwwwv..............bbb.........vwwwv....',
+    '....vwwwwv.............bbbb.......vwwwv.....',
+    '.....vwwwwv.............bbb......vwwwwv.....',
+    '.....vwwwwwv...........cbbb.....vwwwwv......',
+    '......vwwwwwv.........ccbbb....vwwwwwv......',
+    '......vwwwwwwv.......ccbbbbb..vwwwwwv.......',
+    '.......vwwwwwwvv....ccbbbbbbbvwwwwwwv.......',
+    '.......vwwwwwwwwvv.ccbbbbbbbbbwwwwwv........',
+    '........vwwwwwwwwwbcbbbbbbbbbwwwwwv.........',
+    '........vwwvwwwvwwbcbbbbbbbbbwwvwwv.........',
+    '.........vv.vwv.vvbccbbbbbbbbvv.vv..........',
+    '..........v..v....bccbbbbbbbb...............',
+    '..................bccbbbbbbab...............',
+    '..................bbccbbbbbab...............',
+    '.................bb.ccbbbbab.bb.............',
+    '................bb..bccbbbb...bb............',
+    '...............hh...bbcbbbb....hh...........',
+    '.....................bbbbbb.................',
+    '......................bbbbb.................',
+    '.......................bbbb.................',
+    '........................bbb.................',
+    '........................bbb.................',
+    '.......................bbb..................',
+    '......................bbb...................',
+    '....................bbbb....................',
+    '..................bbbb......................',
+    '.................bbb........................',
+    '.................bb.........................',
+    '..................bb........................',
+    '...................bhh......................'
+  ];
+  var PAL = { b: '#7c6bff', a: '#463a82', c: '#b9f0e6', e: '#e7c27a', f: '#ffaa5a', y: '#ffe08a', h: '#dcd7f0', w: '#342c64', v: '#96c8e6' };
+
+  var CODE = [
+    '// rise.js — пиксельный дракон, восстающий из пепла',
+    '// © Дария Кромберг',
+    '',
+    "const ASH = '#3a3646', EMBER = '#ffaa5a';",
+    'const PALETTE = {',
+    "  b: '#7c6bff', a: '#463a82', c: '#b9f0e6', e: '#e7c27a',",
+    "  f: '#ffaa5a', y: '#ffe08a', h: '#dcd7f0', w: '#342c64', v: '#96c8e6'",
+    '};',
+    '',
+    'const DRAGON = ['
+  ].concat(DRAGON.map(function (r) { return "  '" + r + "',"; })).concat([
+    '];',
+    '',
+    'function rise(ctx, t) {',
+    '  for (const p of pixels(DRAGON)) {',
+    '    const k = ease(clamp((t - p.delay) / 1100));   // пепел → искра → чешуя',
+    '    const x = lerp(p.ashX, p.x, k), y = lerp(p.ashY, p.y, k);',
+    '    ctx.fillStyle = mix(EMBER, PALETTE[p.ch], k * k);',
+    '    ctx.fillRect(x * SIZE, y * SIZE, SIZE, SIZE);',
+    '  }',
+    '}',
+    '',
+    'function live(ctx, t) {',
+    '  const flap = 1 - .4 * Math.sin(t / 210) ** 2;    // взмах крыльев',
+    '  for (const p of pixels(DRAGON)) {',
+    '    if (p.ch === \'f\' && Math.random() < .25) continue;   // огонь дрожит',
+    '    const y = p.wing ? SHOULDER + (p.y - SHOULDER) * flap : p.y;',
+    '    ctx.fillStyle = PALETTE[p.ch];',
+    '    ctx.fillRect(p.x * SIZE, Math.round(y) * SIZE, SIZE, SIZE);',
+    '  }',
+    '}',
+    '',
+    'function fall(ctx, t) {',
+    '  // и снова в пепел — чтобы однажды подняться',
+    '  for (const p of pixels(DRAGON)) {',
+    '    const k = clamp((t - p.y * 22) / 1400);',
+    '    ctx.globalAlpha = 1 - k;',
+    '    ctx.fillStyle = mix(PALETTE[p.ch], ASH, k);',
+    '    ctx.fillRect(p.x * SIZE, (p.y + k * k * 30) * SIZE, SIZE, SIZE);',
+    '  }',
+    '}',
+    '',
+    'animate(rise, 2800).then(() => animate(live, 7000)).then(() => animate(fall, 2200));',
+    '',
+    ''
+  ]);
+  function esc(t) { return t.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
+  function hl(line) {
+    var ci = line.indexOf('//'), code = ci >= 0 ? line.slice(0, ci) : line, com = ci >= 0 ? line.slice(ci) : '';
+    code = esc(code).replace(/'[^']*'/g, function (m) { return '<span class="s">' + m + '</span>'; })
+      .replace(/\b(const|function|for|of|if|continue|return)\b/g, '<span class="k">$1</span>');
+    return code + (com ? '<span class="c">' + esc(com) + '</span>' : '');
+  }
+  // typing: the code is written line by line in the haze, then starts over
+  var pre = document.getElementById('ashcode');
+  pre.innerHTML = '<span class="ashcode__in"></span><span class="ashcode__caret"></span>';
+  var out = pre.firstChild, caret = pre.lastChild, li = 0, ci = 0, done = '';
+  if (reduce) { out.innerHTML = CODE.map(hl).join('\n'); caret.remove(); }
+  else (function type() {
+    if (!visible) { setTimeout(type, 500); return; }
+    var line = CODE[li];
+    if (ci <= line.length) {
+      out.innerHTML = done + hl(line.slice(0, ci));
+      out.appendChild(caret);
+      var ch = line[ci - 1];
+      ci += 1 + (Math.random() < .3 ? 1 : 0);
+      setTimeout(type, ch === ' ' ? 28 : 34 + Math.random() * 50);
+    } else {
+      done += hl(line) + '\n'; li++; ci = 0;
+      if (li >= CODE.length) { setTimeout(function () { pre.classList.add('is-fading'); setTimeout(function () { done = ''; li = 0; out.innerHTML = ''; pre.classList.remove('is-fading'); type(); }, 1400); }, 2500); return; }
+      setTimeout(type, line === '' ? 160 : 260 + Math.random() * 380);
+    }
+  })();
+  stage.style.cursor = 'default';
 })();
