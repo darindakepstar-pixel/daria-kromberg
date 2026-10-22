@@ -677,3 +677,10 @@ main { padding-top: 0; }
   .footer .ashcode { padding: 0 0 14px 16px; }
   .footer__name { font-size: 14vw; }
 }
+/* result of the code: small dragon in the haze */
+.ashdragon { position: absolute; z-index: 0; top: clamp(20px, 3vw, 50px); right: 12%; pointer-events: none; image-rendering: pixelated; opacity: 0; transition: opacity 1s;
+  filter: blur(.4px) drop-shadow(0 0 8px rgba(164,139,255,.45)); }
+.ashdragon.is-on { opacity: .7; }
+.ashcode__caret.is-run { background: rgba(255,170,90,.7); }
+@media (max-width: 700px) { .ashdragon { right: 14px; top: 24px; } .ashdragon.is-on { opacity: .55; } }
+@media (prefers-reduced-motion: reduce) { .ashdragon { display: none; } }
